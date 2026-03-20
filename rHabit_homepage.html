@@ -495,7 +495,13 @@
             .tabs{width:100%; border-radius: 16px; padding: 4px; gap:4px; flex-direction: column;}
             .tab-btn{width:100%; text-align:center; border-radius: 12px; padding: 14px;}
         }
-    </style>
+    
+        .lang-switch { display:flex; gap: 4px; background: rgba(255,255,255,0.05); padding:4px; border-radius: 12px; margin-right: auto; margin-left: 20px;}
+        .lang-btn { text-decoration: none; color: var(--text-sub); font-size: 13px; font-weight: 700; padding: 4px 10px; border-radius: 8px; transition: var(--transition); }
+        .lang-btn.active { background: var(--blue); color: #fff; }
+        .lang-btn:not(.active):hover { color: var(--text); background: rgba(255,255,255,0.1); }
+        @media(max-width:768px){ .lang-switch { margin-left: 10px; } }
+</style>
 </head>
 <body>
 
@@ -511,6 +517,10 @@
         <img src="rHabit (2).png" alt="rHabit icon">
         <span>rHabit</span>
     </a>
+    <div class="lang-switch">
+        <a href="index.html" class="lang-btn active">JP</a>
+        <a href="en.html" class="lang-btn">EN</a>
+    </div>
     <div class="nav-links">
         <a href="#features">機能</a>
         <a href="#privacy-policy">プライバシー</a>
