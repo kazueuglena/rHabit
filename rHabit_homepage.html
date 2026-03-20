@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>rHabit - 無意識のクセを、意識へ。</title>
+    <meta name="description" content="rHabitは、iPhoneのTrueDepth AIが無意識の口癖をリアルタイムで検知・記録。気づきから始まる、新しい習慣改善アプリ。">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* ----- MORE MODERN COLOR PALETTE ----- */
+            --bg: #05050A; /* Deeper space black */
+            --bg-glass: rgba(5, 5, 10, 0.65);
+            --card: rgba(255, 255, 255, 0.03); /* Glassmorphism base */
+            --card-hover: rgba(255, 255, 255, 0.06);
+            --border: rgba(255, 255, 255, 0.08);
+            --border-bright: rgba(96, 165, 250, 0.4);
+            
+            --blue: #3B82F6;
+            --blue-bright: #60A5FA;
+            --blue-glow: rgba(59, 130, 246, 0.5);
+            --blue-dim: rgba(59, 130, 246, 0.12);
+            
+            --text: #F8FAFC;
+            --text-sub: #94A3B8;
+            --text-dim: #64748B;
+            
+            --blur: blur(20px);
+            --transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        * { margin:0; padding:0; box-sizing:border-box; }
+        html { scroll-behavior:smooth; }
+        body {
+            font-family:'Inter','Noto Sans JP',-apple-system,sans-serif;
+            background:var(--bg);
+            color:var(--text);
+            line-height:1.6;
+            overflow-x:hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ── DYNAMIC BACKGROUND ── */
+        .ambient-bg {
+            position: fixed; inset: 0; z-index: -1;
+            pointer-events: none; overflow: hidden;
+            background: var(--bg);
+        }
+        .orb {
+            position: absolute; border-radius: 50%;
+            filter: blur(80px); opacity: 0.15;
+            animation: float 20s infinite ease-in-out;
+        }
+        .orb-1 {
+            width: 600px; height: 600px; background: #3B82F6;
+            top: -10%; left: -10%;
+        }
+        .orb-2 {
+            width: 500px; height: 500px; background: #8B5CF6;
+            top: 40%; right: -10%; animation-delay: -5s;
+        }
+        .orb-3 {
+            width: 400px; height: 400px; background: #06B6D4;
+            bottom: -10%; left: 30%; animation-delay: -10s;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(50px) scale(1.05); }
+        }
+
+        /* ── NAV (GLASSMORPHISM) ── */
+        nav {
+            position:fixed; top:0; left:0; right:0; z-index:100;
+            padding:16px 32px;
+            display:flex; align-items:center; justify-content:space-between;
+            background:var(--bg-glass);
+            backdrop-filter:var(--blur);
+            -webkit-backdrop-filter:var(--blur);
+            border-bottom:1px solid var(--border);
+            transition:var(--transition);
+        }
+        .nav-logo {
+            display:flex; align-items:center; gap:12px;
+            text-decoration:none;
+        }
+        .nav-logo img {
+            width:34px; height:34px;
+            border-radius:10px;
+            object-fit:cover;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+        .nav-logo span {
+            font-size:19px; font-weight:900; letter-spacing:-0.5px;
+            color:var(--text);
+        }
+        .nav-links { display:flex; align-items:center; gap:8px; }
+        .nav-links a {
+            color:var(--text-sub); text-decoration:none;
+            font-size:14px; font-weight:600;
+            padding:8px 16px; border-radius:12px;
+            transition:var(--transition);
+        }
+        .nav-links a:hover { color:var(--text); background:rgba(255,255,255,0.08); }
+        .nav-cta {
+            background: linear-gradient(135deg, var(--blue), #2563EB) !important;
+            color:#fff !important;
+            border-radius:12px !important; padding:9px 20px !important;
+            font-weight:700 !important;
+            box-shadow:0 4px 20px var(--blue-glow) !important;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .nav-cta:hover { transform:translateY(-2px); box-shadow:0 6px 24px rgba(59,130,246,0.6) !important; }
+
+        /* ── HERO ── */
+        .hero {
+            min-height:100dvh;
+            display:flex; align-items:center; justify-content:center;
+            flex-direction:column; text-align:center;
+            padding:140px 24px 80px;
+            position:relative;
+        }
+        .hero-badge {
+            display:inline-flex; align-items:center; gap:8px;
+            background:rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border:1px solid var(--border);
+            color:var(--text-sub);
+            font-size:13px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase;
+            padding:8px 20px; border-radius:100px;
+            margin-bottom:32px;
+            animation:revealUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+        .hero-badge .dot {
+            width:8px; height:8px; border-radius:50%;
+            background:linear-gradient(135deg, #60A5FA, #3B82F6);
+            box-shadow:0 0 12px var(--blue-bright);
+            animation:pulseGlow 2s infinite;
+        }
+        @keyframes pulseGlow {
+            0%,100%{opacity:1;transform:scale(1);box-shadow:0 0 12px var(--blue-bright);}
+            50%{opacity:0.6;transform:scale(0.85);box-shadow:0 0 4px var(--blue-bright);}
+        }
+        .hero h1 {
+            font-size:clamp(42px,7.5vw,84px);
+            font-weight:900; letter-spacing:-3px; line-height:1.05;
+            margin-bottom:24px;
+            animation:revealUp 0.8s 0.1s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+        .hero h1 .grad {
+            background:linear-gradient(180deg, #FFFFFF 0%, rgba(255, 255, 255, 0.7) 100%);
+            -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+            background-clip:text;
+            position: relative;
+        }
+        .hero > p {
+            font-size:clamp(16px,2.5vw,20px); color:var(--text-sub);
+            max-width:580px; margin:0 auto 40px; line-height:1.8;
+            font-weight: 500;
+            animation:revealUp 0.8s 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+        .hero-actions {
+            display:flex; gap:16px; flex-wrap:wrap; justify-content:center;
+            animation:revealUp 0.8s 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+        .btn-primary {
+            display:inline-flex; align-items:center; gap:10px;
+            background: linear-gradient(135deg, var(--blue), #2563EB);
+            color:#fff;
+            text-decoration:none; font-size:16px; font-weight:700;
+            padding:16px 36px; border-radius:16px;
+            box-shadow:0 8px 32px var(--blue-glow);
+            border: 1px solid rgba(255,255,255,0.1);
+            transition:var(--transition);
+        }
+        .btn-primary:hover { transform:translateY(-3px); box-shadow:0 12px 40px rgba(59,130,246,0.6); }
+        .btn-secondary {
+            display:inline-flex; align-items:center; gap:10px;
+            background:var(--card); color:var(--text);
+            backdrop-filter: var(--blur);
+            text-decoration:none; font-size:16px; font-weight:600;
+            padding:16px 32px; border-radius:16px;
+            border:1px solid var(--border);
+            transition:var(--transition);
+        }
+        .btn-secondary:hover { background:var(--card-hover); border-color:rgba(255,255,255,0.2); transform:translateY(-3px); }
+
+        /* ── PHONE MOCKUP (PREMIUM) ── */
+        .hero-phone {
+            margin-top:70px;
+            animation:revealUp 0.8s 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+            position:relative; display:inline-block;
+        }
+        .hero-phone::before { /* Glow behind phone */
+            content: ''; position: absolute; top: 10%; left: 5%; right: 5%; bottom: 10%;
+            background: var(--blue); filter: blur(80px); opacity: 0.15; z-index: -1;
+        }
+        .phone-mockup {
+            width:260px; height:530px;
+            background:rgba(10, 10, 15, 0.6);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border-radius:48px;
+            box-shadow:
+                inset 0 0 0 1px rgba(255,255,255,0.1),
+                inset 0 0 0 8px rgba(255,255,255,0.02),
+                0 40px 100px rgba(0,0,0,0.8),
+                0 20px 40px rgba(59,130,246,0.1);
+            overflow:hidden;
+            display:flex; flex-direction:column;
+            padding:26px 20px 20px;
+            color:#fff; gap:12px;
+            position:relative;
+            border: 1px solid rgba(255,255,255,0.05); /* subtle outer border */
+        }
+        .phone-status-bar {
+            display:flex; justify-content:space-between;
+            font-size:11px; font-weight:700; opacity:0.6;
+        }
+        .phone-header {
+            display:flex; align-items:center; gap:10px; margin-top: 4px;
+        }
+        .phone-header-icon {
+            width:28px; height:28px; border-radius:8px; overflow:hidden; flex-shrink:0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+        }
+        .phone-header-icon img { width:100%; height:100%; object-fit:cover; }
+        .phone-app-name { font-size:18px; font-weight:900; letter-spacing:-0.5px; }
+        .phone-sub { font-size:11px; color:var(--text-sub); margin-top:-2px; font-weight: 500;}
+        
+        .phone-badge {
+            display:inline-flex; align-items:center; gap:6px;
+            background:rgba(16,185,129,0.1);
+            border:1px solid rgba(16,185,129,0.2);
+            border-radius:100px; padding:6px 12px;
+            font-size:10px; font-weight:800; letter-spacing:0.05em;
+            color:#34D399; width:fit-content;
+        }
+        .phone-badge .live-dot {
+            width:6px; height:6px; background:#10B981; border-radius:50%;
+            box-shadow:0 0 8px #10B981; animation:pulse 1.5s infinite;
+        }
+        .phone-camera-area {
+            flex:1; border-radius:20px; overflow:hidden;
+            position:relative; background:#000;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1);
+        }
+        .phone-camera-area img {
+            width:100%; height:100%; object-fit:cover; object-position:center top;
+            filter:brightness(0.9) saturate(0.9);
+        }
+        .phone-camera-area::after {
+            content:''; position:absolute; inset:0;
+            border:1.5px solid rgba(96,165,250,0.6);
+            border-radius:20px;
+            animation:scanPulse 3s infinite;
+        }
+        @keyframes scanPulse {
+            0%,100%{border-color:rgba(96,165,250,0.2); box-shadow:inset 0 0 20px rgba(59,130,246,0.0);}
+            50%{border-color:rgba(96,165,250,0.8); box-shadow:inset 0 0 40px rgba(59,130,246,0.2);}
+        }
+        .scan-line {
+            position:absolute; left:0; right:0; height:3px;
+            background:linear-gradient(90deg, transparent, rgba(96,165,250,0.8), transparent);
+            box-shadow: 0 0 10px rgba(96,165,250,0.5);
+            animation:scanLine 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+            pointer-events:none; z-index:2;
+        }
+        @keyframes scanLine {
+            0%{top:5%;opacity:0;} 15%{opacity:1;} 85%{opacity:1;} 100%{top:95%;opacity:0;}
+        }
+        .phone-metric {
+            background:rgba(255,255,255,0.04);
+            border:1px solid rgba(255,255,255,0.06);
+            backdrop-filter: blur(10px);
+            border-radius:16px; padding:12px 16px;
+            display:flex; justify-content:space-between; align-items:center;
+            margin-top: 4px;
+        }
+        .phone-metric-label { font-size:10px; color:var(--text-sub); font-weight:700; letter-spacing:0.05em; text-transform:uppercase; }
+        .phone-metric-value { font-size:16px; font-weight:900; color:#fff; }
+        .phone-metric-value.good { color:#34D399; }
+        .phone-btn {
+            background:var(--card); border: 1px solid var(--border);
+            border-radius:14px; padding:14px;
+            text-align:center; font-size:13px; font-weight:700;
+            color:var(--text); letter-spacing:0.02em;
+            transition: var(--transition);
+            backdrop-filter: blur(10px);
+        }
+        .phone-btn:hover { background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3); color: #F87171; }
+
+        /* ── SECTIONS ── */
+        section { padding:120px 24px; position: relative; }
+        .section-inner { max-width:1080px; margin:0 auto; }
+        .section-header { text-align: center; margin-bottom: 64px; }
+        .section-label {
+            font-size:12px; font-weight:800; letter-spacing:0.15em;
+            text-transform:uppercase; color:var(--blue-bright); margin-bottom:16px;
+            display: inline-block; padding: 6px 14px; background: var(--blue-dim);
+            border-radius: 100px; border: 1px solid rgba(59,130,246,0.2);
+        }
+        .section-title {
+            font-size:clamp(32px,4.5vw,48px); font-weight:900;
+            letter-spacing:-1.5px; line-height:1.2; margin-bottom:20px;
+        }
+        .section-desc {
+            font-size:18px; color:var(--text-sub); max-width:600px;
+            margin:0 auto; line-height:1.75; font-weight: 500;
+        }
+
+        /* ── HOW IT WORKS ── */
+        .steps-grid {
+            display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:24px;
+        }
+        .step-card {
+            background:var(--card); backdrop-filter:var(--blur); -webkit-backdrop-filter:var(--blur);
+            border:1px solid var(--border);
+            border-radius:32px; padding:40px 32px;
+            transition:var(--transition); position:relative; overflow:hidden;
+        }
+        .step-card::before {
+            content:''; position:absolute; top:0; left:0; right:0; height:3px;
+            background:linear-gradient(90deg, var(--blue), var(--blue-bright));
+            transform:scaleX(0); transform-origin:left; transition:transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .step-card:hover::before { transform:scaleX(1); }
+        .step-card:hover { transform:translateY(-8px); border-color:rgba(255,255,255,0.15); background: var(--card-hover); box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
+        .step-num { font-size:12px; font-weight:800; color:var(--blue-bright); letter-spacing:0.1em; text-transform:uppercase; margin-bottom:20px; }
+        .step-icon {
+            width:56px; height:56px; border-radius:18px;
+            background:var(--blue-dim); margin-bottom:24px;
+            display:flex; align-items:center; justify-content:center;
+            border: 1px solid rgba(59,130,246,0.2);
+        }
+        .step-icon svg { width:26px; height:26px; color:var(--blue-bright); }
+        .step-card h3 { font-size:20px; font-weight:800; margin-bottom:12px; letter-spacing:-0.4px; }
+        .step-card p { font-size:15px; color:var(--text-sub); line-height:1.7; font-weight: 500;}
+
+        /* ── FEATURES ── */
+        .features-grid {
+            display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:24px;
+        }
+        .feature-card {
+            background:var(--card); backdrop-filter:var(--blur); -webkit-backdrop-filter:var(--blur);
+            border:1px solid var(--border); border-radius:32px; padding:36px;
+            transition:var(--transition);
+        }
+        .feature-card:hover {
+            background:var(--card-hover); transform:translateY(-6px) scale(1.02);
+            border-color:var(--border-bright);
+            box-shadow:0 16px 40px rgba(59,130,246,0.1);
+        }
+        .feature-icon-wrap {
+            width:60px; height:60px; border-radius:20px;
+            background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(59,130,246,0.05));
+            border: 1px solid rgba(59,130,246,0.2);
+            margin-bottom:24px; display:flex; align-items:center; justify-content:center;
+        }
+        .feature-icon-wrap svg { width:28px; height:28px; opacity:0.9; color:var(--blue-bright); }
+        .feature-card h3 { font-size:18px; font-weight:800; margin-bottom:12px; letter-spacing:-0.4px; }
+        .feature-card p { font-size:14.5px; color:var(--text-sub); line-height:1.75; font-weight: 500;}
+
+        /* ── PRIVACY BANNER ── */
+        .privacy-banner {
+            background: linear-gradient(135deg, rgba(15, 31, 61, 0.4) 0%, rgba(13, 21, 48, 0.4) 100%);
+            backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
+            border:1px solid rgba(59,130,246,0.3);
+            border-radius:40px; padding:70px 40px;
+            text-align:center; position:relative; overflow:hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        .privacy-banner::before {
+            content:''; position:absolute; inset:0;
+            background:radial-gradient(ellipse 70% 50% at 50% 0%, rgba(59,130,246,0.15) 0%, transparent 80%);
+            pointer-events:none;
+        }
+        .privacy-banner h2 { font-size:clamp(28px,4vw,40px); font-weight:900; margin-bottom:20px; letter-spacing:-1px; }
+        .privacy-banner > p { font-size:18px; color:var(--text-sub); max-width:560px; margin:0 auto 40px; line-height:1.7; font-weight: 500;}
+        .privacy-tags { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; }
+        .privacy-tag {
+            display:inline-flex; align-items:center; gap:8px;
+            background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);
+            border-radius:100px; padding:10px 20px;
+            font-size:14px; font-weight:700; color:var(--text);
+            backdrop-filter: blur(5px);
+        }
+        .privacy-tag svg { width:16px; height:16px; color:var(--blue-bright); }
+
+        /* ── STATS ── */
+        .stats-row {
+            display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:24px; margin:0 auto;
+        }
+        .stat-card {
+            background:var(--card); backdrop-filter:var(--blur); border:1px solid var(--border);
+            border-radius:32px; padding:40px 24px; text-align:center; transition: var(--transition);
+        }
+        .stat-card:hover { border-color: rgba(255,255,255,0.15); transform: translateY(-4px); }
+        .stat-num { font-size:48px; font-weight:900; color:var(--blue-bright); letter-spacing:-2px; line-height:1; }
+        .stat-label { font-size:14px; color:var(--text-sub); margin-top:12px; font-weight:700; }
+
+        /* ── POLICY TABS ── */
+        .tabs {
+            display:flex; gap:8px;
+            background:rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);
+            border-radius:100px; padding:6px;
+            width:fit-content; margin: 0 auto 48px; flex-wrap:wrap;
+            backdrop-filter: var(--blur);
+        }
+        .tab-btn {
+            padding:12px 28px; border-radius:100px; border:none;
+            background:none; font-size:15px; font-weight:700;
+            color:var(--text-sub); cursor:pointer; transition:var(--transition);
+        }
+        .tab-btn:hover { color: var(--text); }
+        .tab-btn.active { background:var(--card-hover); color:var(--text); box-shadow:0 4px 12px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); }
+        .tab-content { display:none; animation: fadeIn 0.4s ease; }
+        .tab-content.active { display:block; }
+        @keyframes fadeIn { from {opacity: 0; transform: translateY(10px);} to {opacity: 1; transform: translateY(0);} }
+        
+        .policy-card {
+            background:var(--card); backdrop-filter:var(--blur); border:1px solid var(--border);
+            border-radius:24px; padding:32px; margin-bottom:16px;
+        }
+        .policy-card h3 {
+            font-size:17px; font-weight:800; color:var(--text);
+            margin-bottom:12px; display:flex; align-items:center; gap:10px;
+        }
+        .policy-card h3 svg { width:20px; height:20px; color: var(--blue-bright); }
+        .policy-card p,.policy-card li { font-size:15px; color:var(--text-sub); line-height:1.75; font-weight: 500; }
+        .policy-card ul { padding-left:24px; margin-top:10px; }
+        .policy-card li { margin-bottom:8px; }
+        .important-box {
+            background:linear-gradient(90deg, rgba(59,130,246,0.1), transparent);
+            border-left:4px solid var(--blue);
+            border-radius:0 16px 16px 0;
+            padding:20px 24px; margin-bottom:32px;
+        }
+        .important-box p { color:var(--blue-bright); font-size:15px; font-weight:700; line-height:1.6; }
+
+        /* ── SUPPORT ── */
+        .support-cards {
+            display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:24px;
+        }
+        .support-card {
+            background:var(--card); backdrop-filter:var(--blur); border:1px solid var(--border);
+            border-radius:32px; padding:36px;
+            display:flex; gap:20px; align-items:flex-start;
+            transition:var(--transition); text-decoration:none; color:inherit;
+        }
+        .support-card:hover { background:var(--card-hover); transform:translateY(-6px); border-color:rgba(255,255,255,0.15); box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .support-icon {
+            width:56px; height:56px; background:var(--blue-dim); border: 1px solid rgba(59,130,246,0.2);
+            border-radius:18px; display:flex; align-items:center; justify-content:center;
+            flex-shrink:0;
+        }
+        .support-icon svg { width:24px; height:24px; color:var(--blue-bright); }
+        .support-card h3 { font-size:18px; font-weight:800; margin-bottom:6px; }
+        .support-card p { font-size:14px; color:var(--text-sub); line-height:1.6; font-weight: 500;}
+        .support-card .link-text { font-size:15px; font-weight:700; color:var(--blue-bright); margin-top:12px; }
+
+        /* ── FOOTER ── */
+        footer {
+            border-top:1px solid var(--border);
+            padding:60px 24px; text-align:center;
+            color:var(--text-sub); font-weight: 500;
+        }
+        .footer-logo {
+            display:flex; align-items:center; justify-content:center; gap:10px;
+            margin-bottom:16px;
+        }
+        .footer-logo img { width:32px; height:32px; border-radius:10px; opacity: 0.8; }
+        .footer-logo span { font-size:20px; font-weight:900; color:var(--text); letter-spacing:-0.5px; }
+        .footer-links { display:flex; gap:32px; justify-content:center; flex-wrap:wrap; margin:24px 0; }
+        .footer-links a { color:var(--text-sub); text-decoration:none; font-size:14px; font-weight:600; transition:var(--transition); }
+        .footer-links a:hover { color:var(--text); }
+        .footer-copy { font-size:13px; margin-top:24px; opacity: 0.6; }
+
+        /* ── ANIMATIONS ── */
+        @keyframes revealUp {
+            from { opacity: 0; transform: translateY(30px); filter: blur(10px); }
+            to { opacity: 1; transform: translateY(0); filter: blur(0); }
+        }
+        .fade-in { opacity: 0; transform: translateY(30px); filter: blur(5px); transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+        .fade-in.visible { opacity: 1; transform: translateY(0); filter: blur(0); }
+
+        /* ── RESPONSIVE ── */
+        @media(max-width:768px){
+            nav{padding:16px 20px;}
+            .nav-links a:not(.nav-cta){display:none;}
+            section{padding:80px 20px;}
+            .hero{padding:140px 20px 60px;}
+            .privacy-banner{padding:40px 24px;}
+            .tabs{width:100%; border-radius: 16px; padding: 4px; gap:4px; flex-direction: column;}
+            .tab-btn{width:100%; text-align:center; border-radius: 12px; padding: 14px;}
+        }
+    </style>
+</head>
+<body>
+
+<div class="ambient-bg">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+</div>
+
+<!-- NAV -->
+<nav id="nav">
+    <a href="#" class="nav-logo">
+        <img src="rHabit (2).png" alt="rHabit icon">
+        <span>rHabit</span>
+    </a>
+    <div class="nav-links">
+        <a href="#features">機能</a>
+        <a href="#privacy-policy">プライバシー</a>
+        <a href="#support">サポート</a>
+        <a href="#support" class="nav-cta">お問い合わせ</a>
+    </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="top">
+    <div class="hero-badge"><span class="dot"></span>iPhone TrueDepth AI 搭載</div>
+    <h1><span class="grad">無意識のクセを、<br>意識へ。</span></h1>
+    <p>rHabitは、iPhoneの最先端AIが口の開きをリアルタイムで検知。気づきのたびに心地よいバイブレーションで知らせ、あなたの習慣改善を自動でサポートします。</p>
+    <div class="hero-actions">
+        <a href="https://apps.apple.com/app/rhabit" class="btn-primary" id="hero-appstore-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+            App Store で入手
+        </a>
+        <a href="#how-it-works" class="btn-secondary" id="hero-learn-btn">使い方を見る →</a>
+    </div>
+
+    <div class="hero-phone">
+        <div class="phone-mockup">
+            <div class="phone-status-bar"><span>9:41</span><span>●●●</span></div>
+            <div class="phone-header">
+                <div class="phone-header-icon"><img src="rHabit (2).png" alt="icon"></div>
+                <div>
+                    <div class="phone-app-name">rHabit</div>
+                    <div class="phone-sub">Deep Focus Session</div>
+                </div>
+            </div>
+            <div class="phone-badge"><span class="live-dot"></span>LIVE SCANNING</div>
+            <div class="phone-camera-area">
+                <img src="33727873_m.jpg" alt="顔検出プレビュー">
+                <div class="scan-line"></div>
+            </div>
+            <div class="phone-metric">
+                <div><div class="phone-metric-label">Detections</div><div class="phone-metric-value">3 times</div></div>
+                <div><div class="phone-metric-label">Duration</div><div class="phone-metric-value good">12:34</div></div>
+            </div>
+            <div class="phone-btn">Stop Recording</div>
+        </div>
+    </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how-it-works">
+    <div class="section-inner">
+        <div class="section-header fade-in">
+            <div class="section-label">How it works</div>
+            <h2 class="section-title">3ステップで始めるクセ改善</h2>
+            <p class="section-desc">難しい設定は一切不要。アプリを開いてスタートするだけで、最先端のAIがあなたの習慣を見守ります。</p>
+        </div>
+        <div class="steps-grid">
+            <div class="step-card fade-in">
+                <div class="step-num">Step 01</div>
+                <div class="step-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                </div>
+                <h3>活動を選んで記録開始</h3>
+                <p>勉強・PC作業・読書など、今やっていることを選んでスタート。iPhoneをスタンドに立てて、カメラを自分に向けるだけでOKです。</p>
+            </div>
+            <div class="step-card fade-in">
+                <div class="step-num">Step 02</div>
+                <div class="step-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6v6l4 2"/><circle cx="18" cy="6" r="3" fill="currentColor" stroke="none" opacity="0.5"/></svg>
+                </div>
+                <h3>AIがリアルタイムで監視</h3>
+                <p>TrueDepth カメラが顔の微細な表情筋を解析。口が3秒以上開いた状態を検知すると、作業の邪魔にならないバイブで優しく通知します。</p>
+            </div>
+            <div class="step-card fade-in">
+                <div class="step-num">Step 03</div>
+                <div class="step-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                </div>
+                <h3>セッション後に分析を確認</h3>
+                <p>検知回数・無意識に開いていた時間・改善スコアが自動で集計されます。活動ごとの自分のクセの傾向をAIが客観的に分析します。</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features">
+    <div class="section-inner">
+        <div class="section-header fade-in">
+            <div class="section-label">Features</div>
+            <h2 class="section-title">習慣を変える、本格的な機能</h2>
+            <p class="section-desc">単なるタイマーではありません。無意識の習慣を自覚し、改善へと導くために設計されたプレミアムな機能群です。</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card fade-in">
+                <div class="feature-icon-wrap">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 10l4.553-2.069A1 1 0 0 1 21 8.82v6.36a1 1 0 0 1-1.447.89L15 14"/><rect x="1" y="6" width="15" height="12" rx="2"/></svg>
+                </div>
+                <h3>リアルタイム検知</h3>
+                <p>Apple TrueDepth API × ARKit による高精度な顔認識技術。独自のEMAスムージングにより一時的なノイズを排除し、本当にクセが出た時だけ正確に捉えます。</p>
+            </div>
+            <div class="feature-card fade-in">
+                <div class="feature-icon-wrap">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+                </div>
+                <h3>スマートな通知システム</h3>
+                <p>クセを検知した瞬間に触覚フィードバック（バイブレーション）で通知。カフェなど静かな場所でも使えるサイレントモードと、音付き通知を柔軟に切り替えられます。</p>
+            </div>
+            <div class="feature-card fade-in">
+                <div class="feature-icon-wrap">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                </div>
+                <h3>高度なセッション分析</h3>
+                <p>検知回数だけでなく、開口時間や平均気づき速度を美しいグラフで可視化。「読書中に発生しやすい」など、活動別の傾向をAIが自動でレポートします。</p>
+            </div>
+            <div class="feature-card fade-in">
+                <div class="feature-icon-wrap">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </div>
+                <h3>完全オフライン処理の安心設計</h3>
+                <p>すべてのAI画像処理はあなたのiPhoneデバイス内で完結します。顔の映像データが外部サーバーに送信されることは物理的にあり得ません。プライバシーを最優先しています。</p>
+            </div>
+            <div class="feature-card fade-in">
+                <div class="feature-icon-wrap">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                </div>
+                <h3>自動スナップショット記録</h3>
+                <p>クセが検知された瞬間に、自動で顔写真をキャプチャ（記録のオン・オフ設定可能）。客観的に自分の状態を後から振り返ることで、改善への意識が飛躍的に高まります。</p>
+            </div>
+            <div class="feature-card fade-in">
+                <div class="feature-icon-wrap">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                </div>
+                <h3>連続達成ストリーク</h3>
+                <p>ゲーム感覚で毎日の記録を習慣化。連続日数を計測し、バッジでお祝いすることで、モチベーションを維持しながら長期的なクセとの決別をサポートします。</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- PRIVACY BANNER -->
+<section>
+    <div class="section-inner">
+        <div class="privacy-banner fade-in">
+            <h2>あなたの顔データは、<br>あなたのデバイスから出ません。</h2>
+            <p>rHabitのコアバリューは、プライバシーとのゼロトレードオフです。すべての最先端AI解析はオフライン・オンデバイスで行われます。</p>
+            <div class="privacy-tags">
+                <span class="privacy-tag">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    外部送信なし
+                </span>
+                <span class="privacy-tag">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    サーバー保存なし
+                </span>
+                <span class="privacy-tag">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    第三者と共有なし
+                </span>
+                <span class="privacy-tag">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    アプリ削除でデータ完全消去
+                </span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- STATS -->
+<section style="padding-top:20px;">
+    <div class="section-inner">
+        <div class="stats-row">
+            <div class="stat-card fade-in"><div class="stat-num">98%</div><div class="stat-label">AI画像検知精度</div></div>
+            <div class="stat-card fade-in"><div class="stat-num">3s</div><div class="stat-label">誤検知防止ルール</div></div>
+            <div class="stat-card fade-in"><div class="stat-num">0</div><div class="stat-label">外部送信されるバイト数</div></div>
+            <div class="stat-card fade-in"><div class="stat-num">100%</div><div class="stat-label">ローカルオンデバイス処理</div></div>
+        </div>
+    </div>
+</section>
+
+<!-- PRIVACY POLICY & SUPPORT -->
+<section id="privacy-policy">
+    <div class="section-inner">
+        <div class="section-header fade-in" style="margin-bottom: 32px;">
+            <div class="section-label">Legal & Support</div>
+            <h2 class="section-title">ポリシーとサポート</h2>
+        </div>
+        
+        <div class="tabs" role="tablist">
+            <button class="tab-btn active" onclick="switchTab('policy')" id="tab-policy" role="tab">プライバシーポリシー</button>
+            <button class="tab-btn" onclick="switchTab('support')" id="tab-support" role="tab">サポート窓口</button>
+        </div>
+
+        <!-- POLICY -->
+        <div class="tab-content active" id="content-policy">
+            <div class="important-box">
+                <p>【最重要事項】すべての情報処理はあなたのiPhoneデバイス内で完結します。カメラ映像や顔認識用の深度データが外部のサーバーに送信されることは意図的にもシステム的にも存在しません。</p>
+            </div>
+            <div class="policy-card">
+                <h3>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                    1. TrueDepth API（顔認識データ）の利用について
+                </h3>
+                <p>Apple が提供する TrueDepth API（ARKit）を使用して、高精度な顔の表情データを取得します。</p>
+                <ul>
+                    <li><strong>利用目的：</strong>セッション実行中の口の開閉状態をリアルタイムで判別し、無意識のクセを検知した際にバイブレーション等のフィードバックを返すという、アプリのコア機能の提供目的のみに使用します。</li>
+                    <li><strong>データの取り扱い：</strong>取得した顔の深度データおよびカメラ映像ストリームは、その瞬間のリアルタイム判定計算にのみメモリ上で使用され、永続化（保存）や、インターネットを経由した外部サーバーへの送信、第三者への共有は一切行われません。</li>
+                </ul>
+            </div>
+            <div class="policy-card">
+                <h3>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    2. 記録データのローカル環境保存
+                </h3>
+                <p>アプリ内でユーザーが自発的に記録するデータ（セッションごとのクセ検出回数、時間、分析用ログ、および任意設定による顔のスナップショット写真）はすべて<strong>ユーザー自身のiPhone端末本体のローカルストレージにのみ保存</strong>されます。ユーザーが本アプリをアンインストールした場合、これらのデータはOSの仕組みによりデバイスから完全に削除されます。</p>
+            </div>
+            <div class="policy-card">
+                <h3>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                    3. サードパーティツールの不使用
+                </h3>
+                <p>当アプリは、ユーザーの行動履歴や行動統計、クラッシュログ等を無断で収集するような、外部の解析ツール（Google Analytics, Firebase Analytics, 各種広告SDK 等）を一切組み込んでいません。</p>
+            </div>
+            <div class="policy-card">
+                <h3>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2l-19 9 7 2.5L12 21.5 21.5 2z"/></svg>
+                    4. ポリシーの改定と通知
+                </h3>
+                <p>法令・ガイドラインの変更、または新機能の追加に伴い、必要に応じて本プライバシーポリシーを改定することがあります。重要な変更があった場合は、App Store のアップデート内容（リリースノート）やアプリ内のお知らせ等で明確に明示します。</p>
+            </div>
+            <p style="font-size:13px;color:var(--text-dim);margin-top:20px;text-align:right;">最終更新日・施行日：2026年4月1日</p>
+        </div>
+
+        <!-- SUPPORT -->
+        <div class="tab-content" id="content-support">
+            <div style="text-align: center; margin-bottom: 40px;">
+                <p style="font-size:16px;color:var(--text-sub);max-width:600px;margin:0 auto;line-height:1.75;">アプリに関する技術的なご質問、不具合の報告、追加してほしい機能のご要望などがございましたら、以下の連絡先までお気軽にご連絡ください。開発者が直接確認し、できる限り迅速に対応いたします。</p>
+            </div>
+            <div class="support-cards">
+                <a href="mailto:koma1667@outlook.jp" class="support-card" id="email-contact-btn">
+                    <div class="support-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                    </div>
+                    <div>
+                        <h3>Eメールでのお問い合わせ</h3>
+                        <p>詳細な不具合報告・具体的な機能要望・その他長文でのご質問などはこちらへどうぞ。</p>
+                        <div class="link-text">koma1667@outlook.jp</div>
+                    </div>
+                </a>
+                <a href="https://twitter.com/kazu_koma08" target="_blank" class="support-card" id="twitter-contact-btn">
+                    <div class="support-icon" style="border-color: rgba(255,255,255,0.1);">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                    </div>
+                    <div>
+                        <h3>X (Twitter) で直接ダイレクトメッセージ</h3>
+                        <p>カジュアルなご意見・簡単なフィードバック・最新の開発情報の確認などはこちらをご利用ください。</p>
+                        <div class="link-text">@kazu_koma08</div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+    <div class="footer-logo">
+        <img src="rHabit (2).png" alt="rHabit">
+        <span>rHabit</span>
+    </div>
+    <p>気づきから始まる、これからの新しい自己管理。</p>
+    <div class="footer-links">
+        <a href="#top">Top</a>
+        <a href="#how-it-works">How it works</a>
+        <a href="#features">Features</a>
+        <a href="#privacy-policy">Privacy &amp; Policy</a>
+        <a href="#support">Support</a>
+    </div>
+    <p class="footer-copy">© 2026 rHabit App. All rights reserved.</p>
+</footer>
+
+<script>
+    // Tab switching logic
+    function switchTab(tab) {
+        document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.getElementById('tab-' + tab).classList.add('active');
+        document.getElementById('tab-' + tab).setAttribute('aria-selected','true');
+        document.getElementById('content-' + tab).classList.add('active');
+    }
+
+    // Support nav link trigger
+    document.querySelectorAll('a[href="#support"]').forEach(el => {
+        el.addEventListener('click', e => {
+            e.preventDefault();
+            document.getElementById('privacy-policy').scrollIntoView({ behavior:'smooth' });
+            setTimeout(() => switchTab('support'), 500);
+        });
+    });
+
+    // Scroll reveal animation with Intersection Observer
+    const observerOptions = {
+        root: null,
+        rootMargin: '0px',
+        threshold: 0.15
+    };
+    const observer = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+                // Optional: stop observing once revealed
+                // observer.unobserve(entry.target);
+            }
+        });
+    }, observerOptions);
+
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+    // Navbar blur and shadow on scroll
+    window.addEventListener('scroll', () => {
+        const nav = document.getElementById('nav');
+        if (window.scrollY > 20) {
+            nav.style.background = 'rgba(5, 5, 10, 0.85)';
+            nav.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
+            nav.style.borderColor = 'rgba(255,255,255,0.05)';
+        } else {
+            nav.style.background = 'rgba(5, 5, 10, 0.65)';
+            nav.style.boxShadow = 'none';
+            nav.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+        }
+    });
+</script>
+</body>
+</html>
